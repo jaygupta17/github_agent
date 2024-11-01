@@ -1,5 +1,5 @@
 import streamlit as st
-from agent import setup_agent,gemini,groq
+from agent import setup_agent,gemini
 import time
 def ui():
     st.sidebar.header("Gemini Agent")
