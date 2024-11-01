@@ -4,15 +4,13 @@ import os
 from langchain.agents import AgentExecutor, Tool, create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_groq import ChatGroq
-from langchain.vectorstores import FAISS
+from langchain_community.vectorstores import FAISS
 from langchain_experimental.text_splitter import SemanticChunker
-from langchain.document_loaders import TextLoader
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import GithubFileLoader,PyPDFLoader
 from pydantic import BaseModel , Field
 from dotenv import load_dotenv
-from langchain_community.agent_toolkits import FileManagementToolkit
 
 load_dotenv()
 
@@ -69,10 +67,8 @@ def github_loader(input):
         ),
     )
     documents = loader.load()
-    text_splitter = SemanticChunker(HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2"),breakpoint_threshold_type="gradient")
-    texts = [doc for doc in text_splitter.split_documents(documents)]
-    return texts
-  
+    FAISS.add_documents(documents=documents,id=["github_output"])
+    return "Github loaded data added to vector store"
   except Exception:
       print("Cant fetch data from url. Url is incorrect or unaccessible")
       return f"Error"
@@ -96,12 +92,12 @@ def setup_agent(llm):
         Tool(
             name="QueryDocuments",
             func=rag_tool.query,
-            description="Query the document knowledge base. Input should be a question."
+            description="Query the document Vector knowledge base. Input should be a question."
         ),
         Tool(
             name="Github Repository Loader",
             func=github_loader,
-            description="Get data from repository. Input should be a dictionary with 'file_types' (list of strings like ['.md', '.ts']) and 'repo' (string like 'username/reponame')",
+            description="Get data from repository to vector database. Input should be a dictionary with 'file_types' (list of strings like ['.md', '.ts']) and 'repo' (string like 'username/reponame')",
             arguments_schema = GithubTool
         ),
         Tool(
