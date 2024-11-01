@@ -3,7 +3,6 @@ import base64
 import os
 from langchain.agents import AgentExecutor, Tool, create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
-from langchain_groq import ChatGroq
 from langchain_community.vectorstores import FAISS
 from langchain_experimental.text_splitter import SemanticChunker
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
@@ -18,10 +17,6 @@ load_dotenv()
 gemini = ChatGoogleGenerativeAI(
     model="gemini-1.5-pro",
     temperature=0,
-)
-
-groq = ChatGroq(
-    model="mixtral-8x7b-32768"
 )
 
 class GithubTool(BaseModel):
