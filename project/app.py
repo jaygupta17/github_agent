@@ -3,10 +3,16 @@ from agent import setup_agent,gemini
 import time
 def ui():
     st.sidebar.header("Gemini Agent")
-
-    if "agent" not in st.session_state:
-        with st.spinner("Thinking"):
-            st.session_state.agent = setup_agent(gemini)
+    
+    repo_name = st.sidebar.text_input(
+        "Enter GitHub Repository",
+value="jaygupta17/movies_backend_gdg",
+placeholder="username/repository"
+    )
+    if "agent" not in st.session_state or st.session_state.get('repo') != repo_name:
+        with st.spinner("Initializing agent..."):
+            st.session_state.agent = setup_agent(gemini, repo_name)
+            st.session_state.repo = repo_name
 
 
     if "chat_history" not in st.session_state:
