@@ -19,22 +19,15 @@ gemini = ChatGoogleGenerativeAI(
     temperature=0,
 )
 
-class GithubTool(BaseModel):
-    """Load data from repository"""
-    file_types: list[str] = Field(..., description="List of file extensions to read")
-    repo: str = Field(..., description="Repo name. example: username/reponame")
-
-
 class RAGTool:
-    def __init__(self):
+    def __init__(self , repo:str):
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-        
-    def github_loader(self,repo:str):
-        print(repo)
-        if not repo:
-            return "Error: Repository path is required"
+        self.repo= repo
+        self.github_loader()
+    def github_loader(self):
+        print(self.repo)
         loader = GithubFileLoader(
-            repo=repo,
+            repo=self.repo,
             access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
             github_api_url="https://api.github.com/",
             file_filter=lambda file_path: file_path.endswith(
@@ -68,19 +61,14 @@ def write_file(input):
     return  "Failed to write"
 
 def setup_agent(llm):
-    rag_tool = RAGTool()
+    rag_tool = RAGTool("jaygupta17/movies_backend_gdg")
     prompt = PromptTemplate.from_template("As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.\n\n. It is able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions. Additionally, Assistant is able to generate its own text based on the input it receives, allowing it to engage in discussions and provide explanations and descriptions on a wide range of topics.\n\n.\n\nTOOLS:\n------\n\nAssistant has access to the following tools:\n\n{tools}\n\nTo use a tool, please use the following format:\n\n```\nThought: Do I need to use a tool? Yes\nAction: the action to take, should be one of [{tool_names}]\nAction Input: the input to the action\nObservation: the result of the action\n```\n\n. When you have a response to say to the Human, or if you have tool for knowledge base, you MUST use the tool for information:\n\n```\nThought: Do I need to use a RAG tool? Yes\nFinal Answer: [your response here]\n```\n\nUse  conversation history to for context . Make sure action input is a valid function argument for tool.  Begin!\n\nPrevious conversation history:\n{chat_history}\n\nNew input: {input}\n{agent_scratchpad}")
 
     tools = [
         Tool(
             name="QueryVectorDatabase",
             func=rag_tool.query,
-            description="Query the knowledge base. Input should be a string query."
-        ),
-        Tool(
-            name="Github Repository Loader",
-            func=rag_tool.github_loader,
-            description='Get data from repository and save to database for retreival. Input should be a repo name in following format : "username/reponame" ',
+            description="Query the knowledge base. This is useful when you need context data to respond to user's query. It includes github repo data. Input should be a string query."
         ),
         Tool(
             name="Write file tool",
