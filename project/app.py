@@ -9,10 +9,31 @@ def ui():
 value="jaygupta17/movies_backend_gdg",
 placeholder="username/repository"
     )
-    if "agent" not in st.session_state or st.session_state.get('repo') != repo_name:
+    st.sidebar.subheader("Select File Types")
+    file_types = {
+        "Markdown (.md)": ".md",
+        "JavaScript (.js)": ".js",
+        "Python (.py)": ".py",
+        "TypeScript (.ts)": ".ts",
+        "JSON (.json)": ".json",
+        "Dockerfile": "Dockerfile",
+        "YAML (.yaml, .yml)": ".yaml",
+        "TypeScript React (.tsx)": ".tsx",
+        "JavaScript React (.jsx)": ".jsx"
+    }
+    
+    selected_types = []
+    for label, extension in file_types.items():
+        if st.sidebar.checkbox(label, value=extension == ".md"):
+            if extension == ".yaml":
+    selected_types.extend([".yaml", ".yml"])
+            else:           selected_types.append(extension)
+    
+    current_config = f"{repo_name}_{'-'.join(sorted(selected_types))}"
+    if ("agent" not in st.session_state) or (st.session_state.get('current_config') != current_config):
         with st.spinner("Initializing agent..."):
-            st.session_state.agent = setup_agent(gemini, repo_name)
-            st.session_state.repo = repo_name
+            st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
+            st.session_state.current_config = current_config
 
 
     if "chat_history" not in st.session_state:
