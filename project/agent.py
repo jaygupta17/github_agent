@@ -43,11 +43,9 @@ class RAGTool:
     def query(self, question: str) -> str:
         try:
             retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": 3}  # Limit the number of results
+                search_kwargs={"k": 3}
             )
             results = retriever.invoke(question)
-            
-            # Combine the retrieved documents into a single coherent response
             combined_content = "\n".join([doc.page_content for doc in results])
             return f"Based on the repository content: {combined_content}"
         except Exception as e:
@@ -65,7 +63,6 @@ def write_file(input):
 def setup_agent(llm):
     rag_tool = RAGTool("jaygupta17/movies_backend_gdg")
     
-    # Modified prompt to be more specific about tool usage and prevent loops
     prompt = PromptTemplate.from_template("""You are a helpful AI assistant with access to a knowledge base of repository content. Your goal is to provide clear, direct answers based on the repository information.
 
 TOOLS:
@@ -118,6 +115,6 @@ New input: {input}
         verbose=True,
         handle_parsing_errors=True,
         max_execution_time=300,
-        max_iterations=5  # Reduced max iterations to prevent loops
+        max_iterations=5
     )
     return agent_executor
