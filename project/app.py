@@ -26,8 +26,9 @@ placeholder="username/repository"
     for label, extension in file_types.items():
         if st.sidebar.checkbox(label, value=extension == ".md"):
             if extension == ".yaml":
-    selected_types.extend([".yaml", ".yml"])
-            else:           selected_types.append(extension)
+                selected_types.extend([".yaml", ".yml"])
+            else:           
+                selected_types.append(extension)
     
     current_config = f"{repo_name}_{'-'.join(sorted(selected_types))}"
     if ("agent" not in st.session_state) or (st.session_state.get('current_config') != current_config):
