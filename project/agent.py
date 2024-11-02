@@ -77,5 +77,5 @@ def setup_agent(llm):
         )
     ]
     agent = create_react_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,handle_parsing_errors=True)
+    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,handle_parsing_errors=True, max_execution_time=20)
     return agent_executor
