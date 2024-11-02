@@ -157,12 +157,6 @@ Final Answer: [your response here]
 [Give final answer as output]
 ```
                                                                                                                          
-When you have gathered enough information to answer the human's question:
-```
-Thought: I now have enough information to provide a complete answer
-Final Answer: [your response here]
-```
-
 Important Guidelines:
 1. Use the QueryVectorDatabase tool only once to get repository content.
 2. Only make additional queries if absolutely necessary
@@ -170,7 +164,14 @@ Important Guidelines:
 4. Don't repeat queries for the same information
 5. Use RepositorySummary tool only once to get repository summary.
 6. For RepositorySummary tool
-, always provide up to date summary [try including code structure,features,use case , tc] as final answer                  
+, always provide up to date summary as final answer           
+
+
+When you have gathered enough information to answer the human's question:
+```
+Thought: I now have enough information to provide a complete answer
+Final Answer: [your response here]
+```
                                                                                                            
 Previous conversation history:
 {chat_history}
