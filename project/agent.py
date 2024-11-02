@@ -45,9 +45,11 @@ class RAGTool:
     def __init__(self, repo: str,file_types: list = None):
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
         self.repo = repo
+        self.summary=""
+        self.combined_content=""
         self.file_types = file_types or [".md"] 
         self.github_loader()
-
+        
     def get_text_splitter(self, file_extension: str):
         language = self.LANGUAGE_CONFIGS.get(file_extension)
         if language:
@@ -100,9 +102,16 @@ class RAGTool:
         )
         documents = loader.load()
         processed_docs = []
+
         for doc in documents:
-            processed_docs.extend(self.process_document(doc)) 
+            if doc.metadata['path'].startswith("main/package-lock.json"):
+                pass
+            else:
+                processed_docs.extend(self.process_document(doc)) 
+
+        self.combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in processed_docs])
         self.vectorstore = FAISS.from_documents(processed_docs, self.embeddings)
+        self.summary=gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. Repo Content:\n{self.combined_content}")
         print("Loaded.")
         
     def query(self, question: str) -> str:
@@ -117,6 +126,14 @@ class RAGTool:
         except Exception as e:
             return f"Error querying RAG system: {str(e)}"
 
+    def get_summary(self,input:str="")->str:
+            if input:
+                    self.summary = gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. User Input:{input} \n Repo Content:\n{self.combined_content}")
+            if not self.summary:
+                    self.summary = gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. Repo Content:\n{self.combined_content}")
+            return self.summary.content
+
+
 def write_file(input):
     data = json.loads(input)
     try:
@@ -128,9 +145,8 @@ def write_file(input):
 
 def setup_agent(llm,repo_name="jaygupta17/movies_backend_gdg",file_types: list = None):
     rag_tool = RAGTool(repo_name,file_types)
-    
     prompt = PromptTemplate.from_template("""You are a helpful AI assistant with access to a knowledge base of repository content. Your goal is to provide clear, direct answers based on the repository information.
-
+                                                                                                                       
 TOOLS:
 ------
 {tools}
@@ -141,8 +157,16 @@ Thought: Do I need to use a tool? Yes
 Action: the action to take, should be one of [{tool_names}]
 Action Input: the input to the action
 Observation: the result of the action
+[Give final answer as output]
 ```
-
+                                          
+When you dont need tool , use the following format:
+```  
+Thought: Do I need to use a tool? No
+Final Answer: [your response here]
+[Give final answer as output]
+```
+                                                                                                                         
 When you have gathered enough information to answer the human's question:
 ```
 Thought: I now have enough information to provide a complete answer
@@ -150,11 +174,12 @@ Final Answer: [your response here]
 ```
 
 Important Guidelines:
-1. Use the QueryVectorDatabase tool to get repository content.
+1. Use the QueryVectorDatabase tool only once to get repository content.
 2. Only make additional queries if absolutely necessary
 3. Synthesize the information into a coherent response
 4. Don't repeat queries for the same information
-
+5. Use RepositorySummary tool only once to get repository summary.
+6. For RepositorySummary tool, return Action input as final answer                                                                                   
 Previous conversation history:
 {chat_history}
 
@@ -171,6 +196,11 @@ New input: {input}
             name="WriteFile",
             func=write_file,
             description="Write content to a file. Input must be a JSON string with 'file_name' and 'content' properties."
+        ),
+        Tool(
+            name="RepositorySummary",
+            func=rag_tool.get_summary,
+            description="This tool is helpful when you need to know about repository. this tool is for summarising the whole repository content.",
         )
     ]
     

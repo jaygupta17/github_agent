@@ -40,13 +40,18 @@ placeholder="username/repository"
             del st.session_state.agent 
         st.rerun()
    
-    if "agent" not in st.session_state:
-        with st.spinner("Initializing agent..."):
-            st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
-            
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
+
+    if "agent" not in st.session_state:
+        with st.spinner("Initializing agent..."):
+            st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
+            res = st.session_state.agent.invoke({"input":"Give summary of Repository","chat_history":"".join(
+                [f"{x['role']}:{x['content']}," for x in st.session_state.chat_history]
+                )})
+            st.session_state.chat_history.append({"role":"ai","content":res['output']})
+            st.balloons()
 
     for message in st.session_state.chat_history:
         with st.chat_message(message['role']):
