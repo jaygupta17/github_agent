@@ -29,12 +29,8 @@ class RAGTool:
     def __init__(self):
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
         
-    def github_loader(self,input):
-        x= input.replace("```","").strip()
-        print(x)
-        data= json.loads(x)
-        repo = data['repo']
-        file_types = tuple(data['file_types'])
+    def github_loader(self,repo:str):
+        print(repo)
         if not repo:
             return "Error: Repository path is required"
         loader = GithubFileLoader(
@@ -42,7 +38,7 @@ class RAGTool:
             access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
             github_api_url="https://api.github.com/",
             file_filter=lambda file_path: file_path.endswith(
-                file_types
+              ('.md' , '.py','.jsx' ,'.json' , '.js' , 'Dockerfile','.yaml','.tsx','.ts')
             ),
         )
         documents = loader.load()
@@ -82,13 +78,13 @@ def setup_agent(llm):
         Tool(
             name="Github Repository Loader",
             func=rag_tool.github_loader,
-            description='Get data from repository and save to database for retreival. Input should be a valid json with "file_types" (list of strings like [".md", ".ts"]) and "repo" (string like "username/reponame") as its property. Property names and values should be enclosed within double quotes',
+            description='Get data from repository and save to database for retreival. Input should be string repo, where repo is the name of repo.  eg: "username/reponame" ',
             arguments_schema = GithubTool
         ),
         Tool(
             name="Write file tool",
             func=write_file,
-            description="Write the text content to the given file_name. Input should be a valid dictionary with 'file_name' (string: name of file) and 'content'(string: content to write in file. this string should not break the code because of escape characters , etc. pass the content accordingly)"
+            description="Write the text content to the given file_name. Input should be a valid dictionary with 'file_name' and 'content' as property with string values. Input should be valid to directly pass into the function argument. pass the content accordingly"
         )
     ]
     agent = create_react_agent(llm, tools, prompt)
