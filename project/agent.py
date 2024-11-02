@@ -60,8 +60,8 @@ def write_file(input):
     except Exception as e:
         return f"Failed to write: {str(e)}"
 
-def setup_agent(llm):
-    rag_tool = RAGTool("jaygupta17/movies_backend_gdg")
+def setup_agent(llm,repo_name="jaygupta17/movies_backend_gdg"):
+    rag_tool = RAGTool(repo_name)
     
     prompt = PromptTemplate.from_template("""You are a helpful AI assistant with access to a knowledge base of repository content. Your goal is to provide clear, direct answers based on the repository information.
 
