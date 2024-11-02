@@ -38,9 +38,11 @@ class RAGTool:
             access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
             github_api_url="https://api.github.com/",
             file_filter=lambda file_path: file_path.endswith(
-              ('.md' , '.py','.jsx' ,'.json' , '.js' , 'Dockerfile','.yaml','.tsx','.ts')
+              (".md" , "Dockerfile")
             ),
         )
+        # ('.md' , '.py','.jsx' ,'.json' , '.js' , 'Dockerfile','.yaml','.tsx','.ts')
+        
         documents = loader.load()
         text_splitter = SemanticChunker(self.embeddings,breakpoint_threshold_type="gradient")
         texts = text_splitter.split_documents(documents)
