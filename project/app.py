@@ -29,13 +29,18 @@ placeholder="username/repository"
                 selected_types.extend([".yaml", ".yml"])
             else:           
                 selected_types.append(extension)
-    
-    current_config = f"{repo_name}_{'-'.join(sorted(selected_types))}"
-    if ("agent" not in st.session_state) or (st.session_state.get('current_config') != current_config):
+
+
+    if st.sidebar.button("Apply Changes"):
+        st.session_state.selected_types = selected_types
+        if "agent" in st.session_state:
+            del st.session_state.agent 
+        st.rerun()
+   
+    if "agent" not in st.session_state:
         with st.spinner("Initializing agent..."):
             st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
-            st.session_state.current_config = current_config
-
+            
 
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
