@@ -1,14 +1,14 @@
 import json
-import base64
 import os
 from langchain.agents import AgentExecutor, Tool, create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_community.vectorstores import FAISS
-from langchain_experimental.text_splitter import SemanticChunker
+from langchain.text_splitter import RecursiveCharacterTextSplitter, Language, MarkdownHeaderTextSplitter
+# from langchain_experimental.text_splitter import SemanticChunker
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import PromptTemplate
+from langchain_core.documents import Document
 from langchain_community.document_loaders import GithubFileLoader
-from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,12 +19,75 @@ gemini = ChatGoogleGenerativeAI(
 )
 
 class RAGTool:
+     
+    LANGUAGE_CONFIGS = {
+        ".py": Language.PYTHON,
+        ".js": Language.JS,
+        ".jsx": Language.JS,
+        ".ts": Language.TS,
+        ".tsx": Language.TS,
+        ".java": Language.JAVA,
+        ".cpp": Language.CPP,
+        ".c": Language.CPP,
+        ".go": Language.GO,
+        ".rs": Language.RUST,
+        ".php": Language.PHP,
+        ".rb": Language.RUBY,
+        ".cs": Language.CSHARP,
+        ".swift": Language.SWIFT,
+        ".kt": Language.KOTLIN,
+        ".scala": Language.SCALA,
+        ".html": Language.HTML,
+        ".md": Language.MARKDOWN,
+        ".sol": Language.SOL,
+    }
+
     def __init__(self, repo: str,file_types: list = None):
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
         self.repo = repo
         self.file_types = file_types or [".md"] 
         self.github_loader()
+
+    def get_text_splitter(self, file_extension: str):
+        language = self.LANGUAGE_CONFIGS.get(file_extension)
+        if language:
+            return RecursiveCharacterTextSplitter.from_language(
+                language=language,
+                chunk_size=2000,
+                chunk_overlap=200,
+                length_function=len,
+            )
         
+        return RecursiveCharacterTextSplitter(
+            chunk_size=2000,
+            chunk_overlap=200,
+            length_function=len,
+            separators=["\n\n", "\n", " ", ""]
+        )
+
+    def process_document(self, doc):
+        """
+        Process a single document with appropriate text splitter
+        """
+        file_extension = os.path.splitext(doc.metadata.get('source', ''))[1].lower()
+        splitter = self.get_text_splitter(file_extension)
+        
+        if isinstance(splitter, MarkdownHeaderTextSplitter):
+            splits = splitter.split_text(doc.page_content)
+        else:
+            splits = splitter.split_text(doc.page_content)
+            
+        return [
+            Document(
+                page_content=split if isinstance(split, str) else split.page_content,
+                metadata={
+                    **doc.metadata,
+                    'chunk_index': idx
+                }
+            )
+            for idx, split in enumerate(splits)
+        ]
+    
     def github_loader(self):
         print(f"Loading repository: {self.repo}")
         loader = GithubFileLoader(
@@ -35,19 +98,21 @@ class RAGTool:
                 tuple(self.file_types)
             ),
         )
-        
         documents = loader.load()
-        text_splitter = SemanticChunker(self.embeddings, breakpoint_threshold_type="gradient")
-        texts = text_splitter.split_documents(documents)
-        self.vectorstore = FAISS.from_documents(texts, self.embeddings)
+        processed_docs = []
+        for doc in documents:
+            processed_docs.extend(self.process_document(doc)) 
+        self.vectorstore = FAISS.from_documents(processed_docs, self.embeddings)
+        print("Loaded.")
         
     def query(self, question: str) -> str:
         try:
-            retriever = self.vectorstore.as_retriever(
-                search_kwargs={"k": 3}
-            )
+            retriever = self.vectorstore.as_retriever()
             results = retriever.invoke(question)
-            combined_content = "\n".join([doc.page_content for doc in results])
+            for doc in results:
+                print(doc)
+            combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in results])
+            
             return f"Based on the repository content: {combined_content}"
         except Exception as e:
             return f"Error querying RAG system: {str(e)}"
@@ -85,7 +150,7 @@ Final Answer: [your response here]
 ```
 
 Important Guidelines:
-1. Use the QueryVectorDatabase tool ONCE to get repository content
+1. Use the QueryVectorDatabase tool to get repository content.
 2. Only make additional queries if absolutely necessary
 3. Synthesize the information into a coherent response
 4. Don't repeat queries for the same information
@@ -100,7 +165,7 @@ New input: {input}
         Tool(
             name="QueryVectorDatabase",
             func=rag_tool.query,
-            description="Query the repository knowledge base. Use this ONCE to get relevant content. Input should be a specific string query."
+            description="Query the repository knowledge base. Use this to get relevant content from repository. Input should be a specific string query."
         ),
         Tool(
             name="WriteFile",

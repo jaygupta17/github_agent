@@ -1,6 +1,9 @@
 import streamlit as st
 from agent import setup_agent,gemini
 import time
+from dotenv import load_dotenv
+
+load_dotenv()
 def ui():
     st.sidebar.header("Gemini Agent")
     
