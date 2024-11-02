@@ -45,7 +45,7 @@ class RAGTool:
             retriever=self.vectorstore.as_retriever()
             res = retriever.invoke(question)
             print(res)
-            return retriever.invoke(question)
+            return f"Query result:{res}"
         except Exception as e:
             return f"Error querying RAG system: {str(e)}"
 
@@ -68,7 +68,7 @@ def setup_agent(llm):
         Tool(
             name="QueryVectorDatabase",
             func=rag_tool.query,
-            description="Query the knowledge base. This is useful when you need context data to respond to user's query. It includes github repo data. Input should be a string query."
+            description="Query the knowledge base.It returns query results from knowledge base. It includes github repo data. Input should be a string query."
         ),
         Tool(
             name="Write file tool",
