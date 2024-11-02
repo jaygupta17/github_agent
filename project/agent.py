@@ -80,13 +80,13 @@ def setup_agent(llm):
         Tool(
             name="Github Repository Loader",
             func=rag_tool.github_loader,
-            description="Get data from repository and save to database for retreival. Input should be a valid json string with 'file_types' (list of strings like ['.md', '.ts']) and 'repo' (string like 'username/reponame')",
+            description="Get data from repository and save to database for retreival. Input should be a valid dictionary with 'file_types' (list of strings like ['.md', '.ts']) and 'repo' (string like 'username/reponame')",
             arguments_schema = GithubTool
         ),
         Tool(
             name="Write file tool",
             func=write_file,
-            description="Write the text content to the given file_name. Input should be a valid json string with 'file_name' (string: name of file) and 'content'(string: content to write in file. this string should not break the code because of escape characters , etc. pass the content accordingly)"
+            description="Write the text content to the given file_name. Input should be a valid dictionary with 'file_name' (string: name of file) and 'content'(string: content to write in file. this string should not break the code because of escape characters , etc. pass the content accordingly)"
         )
     ]
     agent = create_react_agent(llm, tools, prompt)
