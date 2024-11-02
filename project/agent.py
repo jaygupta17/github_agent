@@ -19,9 +19,10 @@ gemini = ChatGoogleGenerativeAI(
 )
 
 class RAGTool:
-    def __init__(self, repo: str):
+    def __init__(self, repo: str,file_types: list = None):
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
         self.repo = repo
+        self.file_types = file_types or [".md"] 
         self.github_loader()
         
     def github_loader(self):
@@ -31,7 +32,7 @@ class RAGTool:
             access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
             github_api_url="https://api.github.com/",
             file_filter=lambda file_path: file_path.endswith(
-                (".md", "Dockerfile")
+                tuple(self.file_types)
             ),
         )
         
@@ -60,8 +61,8 @@ def write_file(input):
     except Exception as e:
         return f"Failed to write: {str(e)}"
 
-def setup_agent(llm,repo_name="jaygupta17/movies_backend_gdg"):
-    rag_tool = RAGTool(repo_name)
+def setup_agent(llm,repo_name="jaygupta17/movies_backend_gdg",file_types: list = None):
+    rag_tool = RAGTool(repo_name,file_types)
     
     prompt = PromptTemplate.from_template("""You are a helpful AI assistant with access to a knowledge base of repository content. Your goal is to provide clear, direct answers based on the repository information.
 
