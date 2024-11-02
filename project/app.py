@@ -2,11 +2,24 @@ import streamlit as st
 from agent import setup_agent,gemini
 import time
 from dotenv import load_dotenv
+import base64
+import requests
+from io import BytesIO
 
 load_dotenv()
+
+def mm(graph):
+    graphbytes = graph.encode("utf8")
+    base64_bytes = base64.urlsafe_b64encode(graphbytes)
+    base64_string = base64_bytes.decode("ascii")
+    response = requests.get("https://mermaid.ink/img/" + base64_string)
+    return BytesIO(response.content)
+
 def ui():
+    st.markdown("""
+- If agent responds with "Agent stopped due to iteration limit or time limit" , prompt "try again"
+""")
     st.sidebar.header("Gemini Agent")
-    
     repo_name = st.sidebar.text_input(
         "Enter GitHub Repository",
 value="jaygupta17/movies_backend_gdg",
@@ -24,7 +37,7 @@ placeholder="username/repository"
         "TypeScript React (.tsx)": ".tsx",
         "JavaScript React (.jsx)": ".jsx"
     }
-    
+
     selected_types = []
     for label, extension in file_types.items():
         if st.sidebar.checkbox(label, value=extension == ".md"):
@@ -47,27 +60,22 @@ placeholder="username/repository"
     if "agent" not in st.session_state:
         with st.spinner("Initializing agent..."):
             st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
-            res = st.session_state.agent.invoke({"input":"Give summary of Repository","chat_history":"".join(
-                [f"{x['role']}:{x['content']}," for x in st.session_state.chat_history]
-                )})
-            st.session_state.chat_history.append({"role":"ai","content":res['output']})
-            st.balloons()
 
     for message in st.session_state.chat_history:
         with st.chat_message(message['role']):
-            st.write(message['content'])
+            st.markdown(message['content'])
 
     user_input = st.chat_input("Enter message..")
 
     if user_input:
         with st.chat_message("user"):
-            st.write(user_input)
+            st.markdown(user_input)
         time.sleep(10)        
         with st.spinner("Typing..."):
             res = st.session_state.agent.invoke({"input":user_input,"chat_history":"".join([x["role"]+" "+x["content"]+"," for x in st.session_state.chat_history])})
             st.session_state.chat_history.append({"role":"user","content":user_input})
             with st.chat_message("ai"):
-                st.write(res['output'])
+                st.markdown(res['output'])
             st.session_state.chat_history.append({"role":"ai","content":res['output']})
             
 

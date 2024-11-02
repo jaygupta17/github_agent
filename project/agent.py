@@ -18,8 +18,7 @@ gemini = ChatGoogleGenerativeAI(
     temperature=0,
 )
 
-class RAGTool:
-     
+class RAGTool:     
     LANGUAGE_CONFIGS = {
         ".py": Language.PYTHON,
         ".js": Language.JS,
@@ -134,15 +133,6 @@ class RAGTool:
             return self.summary.content
 
 
-def write_file(input):
-    data = json.loads(input)
-    try:
-        with open(data['file_name'], "w") as f:
-            f.write(data['content'])
-        return "Written successfully"
-    except Exception as e:
-        return f"Failed to write: {str(e)}"
-
 def setup_agent(llm,repo_name="jaygupta17/movies_backend_gdg",file_types: list = None):
     rag_tool = RAGTool(repo_name,file_types)
     prompt = PromptTemplate.from_template("""You are a helpful AI assistant with access to a knowledge base of repository content. Your goal is to provide clear, direct answers based on the repository information.
@@ -179,7 +169,9 @@ Important Guidelines:
 3. Synthesize the information into a coherent response
 4. Don't repeat queries for the same information
 5. Use RepositorySummary tool only once to get repository summary.
-6. For RepositorySummary tool, return Action input as final answer                                                                                   
+6. For RepositorySummary tool
+, always provide up to date summary [try including code structure,features,use case , tc] as final answer                  
+                                                                                                           
 Previous conversation history:
 {chat_history}
 
@@ -191,11 +183,6 @@ New input: {input}
             name="QueryVectorDatabase",
             func=rag_tool.query,
             description="Query the repository knowledge base. Use this to get relevant content from repository. Input should be a specific string query."
-        ),
-        Tool(
-            name="WriteFile",
-            func=write_file,
-            description="Write content to a file. Input must be a JSON string with 'file_name' and 'content' properties."
         ),
         Tool(
             name="RepositorySummary",
