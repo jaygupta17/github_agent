@@ -31,7 +31,7 @@ class RAGTool:
         
     def github_loader(self,input):
         print(input)
-        data= json.loads(input)
+        data= json.loads(input.replace("```","").strip())
         repo = data['repo']
         file_types = tuple(data['file_types'])
         if not repo:
