@@ -30,6 +30,7 @@ class RAGTool:
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
         
     def github_loader(self,input):
+        print(input)
         data= json.loads(input)
         repo = data['repo']
         file_types = tuple(data['file_types'])
@@ -80,7 +81,7 @@ def setup_agent(llm):
         Tool(
             name="Github Repository Loader",
             func=rag_tool.github_loader,
-            description="Get data from repository and save to database for retreival. Input should be a valid dictionary with 'file_types' (list of strings like ['.md', '.ts']) and 'repo' (string like 'username/reponame')",
+            description='Get data from repository and save to database for retreival. Input should be a valid dictionary with "file_types" (list of strings like [".md", ".ts"]) and "repo" (string like "username/reponame") as it's property.',
             arguments_schema = GithubTool
         ),
         Tool(
