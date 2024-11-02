@@ -8,11 +8,10 @@ from langchain_experimental.text_splitter import SemanticChunker
 from langchain_huggingface.embeddings import HuggingFaceEmbeddings
 from langchain_core.prompts import PromptTemplate
 from langchain_community.document_loaders import GithubFileLoader
-from pydantic import BaseModel , Field
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 gemini = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
@@ -20,62 +19,105 @@ gemini = ChatGoogleGenerativeAI(
 )
 
 class RAGTool:
-    def __init__(self , repo:str):
+    def __init__(self, repo: str):
         self.embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-mpnet-base-v2")
-        self.repo= repo
+        self.repo = repo
         self.github_loader()
+        
     def github_loader(self):
-        print(self.repo)
+        print(f"Loading repository: {self.repo}")
         loader = GithubFileLoader(
             repo=self.repo,
             access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
             github_api_url="https://api.github.com/",
             file_filter=lambda file_path: file_path.endswith(
-              (".md" , "Dockerfile")
+                (".md", "Dockerfile")
             ),
         )
-        # ('.md' , '.py','.jsx' ,'.json' , '.js' , 'Dockerfile','.yaml','.tsx','.ts')
         
         documents = loader.load()
-        text_splitter = SemanticChunker(self.embeddings,breakpoint_threshold_type="gradient")
+        text_splitter = SemanticChunker(self.embeddings, breakpoint_threshold_type="gradient")
         texts = text_splitter.split_documents(documents)
         self.vectorstore = FAISS.from_documents(texts, self.embeddings)
+        
     def query(self, question: str) -> str:
         try:
-            retriever=self.vectorstore.as_retriever()
-            res = retriever.invoke(question)
-            print(res)
-            return f"Query result:{res}"
+            retriever = self.vectorstore.as_retriever(
+                search_kwargs={"k": 3}  # Limit the number of results
+            )
+            results = retriever.invoke(question)
+            
+            # Combine the retrieved documents into a single coherent response
+            combined_content = "\n".join([doc.page_content for doc in results])
+            return f"Based on the repository content: {combined_content}"
         except Exception as e:
             return f"Error querying RAG system: {str(e)}"
 
 def write_file(input):
-   data = json.loads(input)
-   try:
-    with open(data['file_name'],"w") as f:
-        f.write(data['content'])
-        print("Done")
-        return "written successfully"
-   except:
-    print("Error writing content")
-    return  "Failed to write"
+    data = json.loads(input)
+    try:
+        with open(data['file_name'], "w") as f:
+            f.write(data['content'])
+        return "Written successfully"
+    except Exception as e:
+        return f"Failed to write: {str(e)}"
 
 def setup_agent(llm):
     rag_tool = RAGTool("jaygupta17/movies_backend_gdg")
-    prompt = PromptTemplate.from_template("As a language model, Assistant is able to generate human-like text based on the input it receives, allowing it to engage in natural-sounding conversations and provide responses that are coherent and relevant to the topic at hand.\n\n. It is able to process and understand large amounts of text, and can use this knowledge to provide accurate and informative responses to a wide range of questions. Additionally, Assistant is able to generate its own text based on the input it receives, allowing it to engage in discussions and provide explanations and descriptions on a wide range of topics.\n\n.\n\nTOOLS:\n------\n\nAssistant has access to the following tools:\n\n{tools}\n\nTo use a tool, please use the following format:\n\n```\nThought: Do I need to use a tool? Yes\nAction: the action to take, should be one of [{tool_names}]\nAction Input: the input to the action\nObservation: the result of the action\n```\n\n. When you have a response to say to the Human, or if you have tool for knowledge base, you MUST use the tool for information:\n\n```\nThought: Do I need to use a RAG tool? Yes\nFinal Answer: [your response here]\n```\n\nUse  conversation history to for context . Make sure action input is a valid function argument for tool.  Begin!\n\nPrevious conversation history:\n{chat_history}\n\nNew input: {input}\n{agent_scratchpad}")
+    
+    # Modified prompt to be more specific about tool usage and prevent loops
+    prompt = PromptTemplate.from_template("""You are a helpful AI assistant with access to a knowledge base of repository content. Your goal is to provide clear, direct answers based on the repository information.
+
+TOOLS:
+------
+{tools}
+
+To use a tool, use the following format:
+```
+Thought: Do I need to use a tool? Yes
+Action: the action to take, should be one of [{tool_names}]
+Action Input: the input to the action
+Observation: the result of the action
+```
+
+When you have gathered enough information to answer the human's question:
+```
+Thought: I now have enough information to provide a complete answer
+Final Answer: [your response here]
+```
+
+Important Guidelines:
+1. Use the QueryVectorDatabase tool ONCE to get repository content
+2. Only make additional queries if absolutely necessary
+3. Synthesize the information into a coherent response
+4. Don't repeat queries for the same information
+
+Previous conversation history:
+{chat_history}
+
+New input: {input}
+{agent_scratchpad}""")
 
     tools = [
         Tool(
             name="QueryVectorDatabase",
             func=rag_tool.query,
-            description="Query the knowledge base.It returns query results from knowledge base. It includes github repo data. Input should be a string query."
+            description="Query the repository knowledge base. Use this ONCE to get relevant content. Input should be a specific string query."
         ),
         Tool(
-            name="Write file tool",
+            name="WriteFile",
             func=write_file,
-            description="Write the text content to the given file_name. Input should be a valid dictionary with 'file_name' and 'content' as property with string values. Input should be valid to directly pass into the function argument. pass the content accordingly"
+            description="Write content to a file. Input must be a JSON string with 'file_name' and 'content' properties."
         )
     ]
+    
     agent = create_react_agent(llm, tools, prompt)
-    agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True,handle_parsing_errors=True, max_execution_time=300, max_iterations=50)
+    agent_executor = AgentExecutor(
+        agent=agent,
+        tools=tools,
+        verbose=True,
+        handle_parsing_errors=True,
+        max_execution_time=300,
+        max_iterations=5  # Reduced max iterations to prevent loops
+    )
     return agent_executor
