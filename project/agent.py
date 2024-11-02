@@ -80,8 +80,7 @@ def setup_agent(llm):
         Tool(
             name="Github Repository Loader",
             func=rag_tool.github_loader,
-            description='Get data from repository and save to database for retreival. Input should be string repo, where repo is the name of repo.  eg: "username/reponame" ',
-            arguments_schema = GithubTool
+            description='Get data from repository and save to database for retreival. Input should be a repo name.  eg: "username/reponame" ',
         ),
         Tool(
             name="Write file tool",
