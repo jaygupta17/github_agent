@@ -63,7 +63,17 @@ placeholder="username/repository"
 
     if "agent" not in st.session_state:
         with st.spinner("Initializing agent..."):
-            st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
+            try:
+                st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
+            except:
+                 with st.chat_message("ai"):
+                    st.markdown("""
+                    ## Failed to load repository. Possible reasons:  
+                    - Invalid format for repository name
+                    - Repository not supported
+                    - Repository might be private
+                    - Others [try again later]
+                    """)
 
     for message in st.session_state.chat_history:
         with st.chat_message(message['role']):
