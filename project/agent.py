@@ -180,7 +180,12 @@ When you have gathered enough information to answer the human's question:
 Thought: I now have enough information to provide a complete answer
 Final Answer: [your response here]
 ```
-                                                                                                           
+
+When the information is not found from the knowledge base, use the following format:
+```
+Thought: I have not found any information in knowledge base to provide answer
+Final Answer: [your response here]
+                                                                                                        
 Previous conversation history:
 {chat_history}
 
