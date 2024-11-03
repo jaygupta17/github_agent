@@ -110,12 +110,16 @@ class RAGTool:
                     pass
                 else:
                     processed_docs.extend(self.process_document(doc)) 
-    
             self.combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in processed_docs])
             self.vectorstore = FAISS.from_documents(processed_docs, self.embeddings)
             self.summary=gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. Repo Content:\n{self.combined_content}")
             print("Loaded.")
         except:
+            documents = [Document(
+                page_content=f"Failed to load {self.repo}. Repo not supported, Try different repository",
+                metadata={"source": f"repo:{self.repo}"},
+            )]
+            self.vectorstore = FAISS.from_documents(documents, self.embeddings)
             print(f"Repository not supported, Error loading files")
     def query(self, question: str) -> str:
         try:
