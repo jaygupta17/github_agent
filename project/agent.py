@@ -216,7 +216,7 @@ New input: {input}
         tools=tools,
         verbose=True,
         handle_parsing_errors=True,
-        max_execution_time=600,
-        max_iterations=8
+        max_execution_time=180,
+        max_iterations=60
     )
     return agent_executor
