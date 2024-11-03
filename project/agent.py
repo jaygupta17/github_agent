@@ -82,7 +82,7 @@ class RAGTool:
             
         return [
             Document(
-                page_content=split if isinstance(split, str) else split.page_content,
+                page_content=f"{doc.metadata['path'] or 'Unknown file'}->{split}" if isinstance(split, str) else f"{doc.metadata['path'] or 'Unknown file'}->{split.page_content}",
                 metadata={
                     **doc.metadata,
                     'chunk_index': idx
@@ -123,13 +123,18 @@ class RAGTool:
             print(f"Repository not supported, Error loading files")
     def query(self, question: str) -> str:
         try:
-            retriever = self.vectorstore.as_retriever()
+            retriever = self.vectorstore.as_retriever(
+                 search_type="similarity_score_threshold",
+                 search_kwargs={'score_threshold': 0.1,'k':6}
+            )
             results = retriever.invoke(question)
+            if len(results)==0:
+                 return f"Relevent data not found from the repository, Ask human for more context"
             for doc in results:
                 print(doc)
             combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in results])
             
-            return f"Based on the repository content: {combined_content}"
+            return f"Relevant content from repositor to answer human's query: {combined_content}"
         except Exception as e:
             return f"Error querying RAG system: {str(e)}"
 
@@ -163,17 +168,7 @@ When you dont need tool , use the following format:
 Thought: Do I need to use a tool? No
 Final Answer: [your response here]
 [Give final answer as output]
-```
-                                                                                                                         
-Important Guidelines:
-1. Use the QueryVectorDatabase tool only once to get repository content.
-2. Only make additional queries if absolutely necessary
-3. Synthesize the information into a coherent response
-4. Don't repeat queries for the same information
-5. Use RepositorySummary tool only once to get repository summary.
-6. For RepositorySummary tool
-, always provide up to date summary as final answer           
-
+```                                                                                                                
 
 When you have gathered enough information to answer the human's question:
 ```
@@ -181,11 +176,21 @@ Thought: I now have enough information to provide a complete answer
 Final Answer: [your response here]
 ```
 
-When the information is not found from the knowledge base, use the following format:
+When the information is not found to answer the human's question, use the following format:
 ```
-Thought: I have not found any information in knowledge base to provide answer
-Final Answer: [your response here]
-                                                                                                        
+Thought: I have not found any information to provide answer
+Final Answer: Can not find information. Please provide more context.
+[Give final answer as output]
+```
+
+Important Guidelines:
+1. Use the QueryVectorDatabase tool only once to get repository content from Repository knowledge base.
+2. Only make additional queries if absolutely necessary
+3. Synthesize the information into a coherent response
+4. Don't repeat queries for the same information
+5. Use RepositorySummary tool only once to get repository summary.
+6. For RepositorySummary tool always provide up to date summary as final answer  
+                                          
 Previous conversation history:
 {chat_history}
 
