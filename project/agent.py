@@ -124,17 +124,14 @@ class RAGTool:
     def query(self, question: str) -> str:
         try:
             retriever = self.vectorstore.as_retriever(
-                 search_type="similarity_score_threshold",
-                 search_kwargs={'score_threshold': 0.1,'k':6}
+      
             )
             results = retriever.invoke(question)
-            if len(results)==0:
-                 return f"Relevent data not found from the repository, Stop and Don't execute further. Ask human for more context"
             for doc in results:
                 print(doc)
-            combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in results])
+            combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Part:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in results])
             
-            return f"Relevant content from repositor to answer human's query: {combined_content}"
+            return f"Relevant content from repository.Ask human for more information if following content if not enough to answer human's query: {combined_content}"
         except Exception as e:
             return f"Error querying RAG system: {str(e)}"
 
