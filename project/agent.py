@@ -93,28 +93,30 @@ class RAGTool:
     
     def github_loader(self):
         print(f"Loading repository: {self.repo}")
-        loader = GithubFileLoader(
-            repo=self.repo,
-            access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
-            github_api_url="https://api.github.com/",
-            file_filter=lambda file_path: file_path.endswith(
-                tuple(self.file_types)
-            ),
-        )
-        documents = loader.load()
-        processed_docs = []
-
-        for doc in documents:
-            if doc.metadata['path'].startswith("main/package-lock.json"):
-                pass
-            else:
-                processed_docs.extend(self.process_document(doc)) 
-
-        self.combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in processed_docs])
-        self.vectorstore = FAISS.from_documents(processed_docs, self.embeddings)
-        self.summary=gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. Repo Content:\n{self.combined_content}")
-        print("Loaded.")
-        
+        try:
+            loader = GithubFileLoader(
+                repo=self.repo,
+                access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
+                github_api_url="https://api.github.com/",
+                file_filter=lambda file_path: file_path.endswith(
+                    tuple(self.file_types)
+                ),
+            )
+            documents = loader.load()
+            processed_docs = []
+    
+            for doc in documents:
+                if doc.metadata['path'].startswith("main/package-lock.json"):
+                    pass
+                else:
+                    processed_docs.extend(self.process_document(doc)) 
+    
+            self.combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in processed_docs])
+            self.vectorstore = FAISS.from_documents(processed_docs, self.embeddings)
+            self.summary=gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. Repo Content:\n{self.combined_content}")
+            print("Loaded.")
+        except:
+            print(f"Repository not supported, Error loading files")
     def query(self, question: str) -> str:
         try:
             retriever = self.vectorstore.as_retriever()
