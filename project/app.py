@@ -22,11 +22,7 @@ def ui():
     - Try breaking your question into smaller parts
     - Be more specific in your questions
     - Avoid asking multiple questions at once
-    - If agent responds with "Agent stopped due to iteration limit or time limit" , prompt "try again"
     """)
-    st.markdown("""
-- If agent responds with "Agent stopped due to iteration limit or time limit" , prompt "try again"
-""")
     st.sidebar.header("Gemini Agent")
     repo_name = st.sidebar.text_input(
         "Enter GitHub Repository",
