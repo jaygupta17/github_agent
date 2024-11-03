@@ -201,8 +201,6 @@ New input: {input}
         verbose=True,
         handle_parsing_errors=True,
         max_execution_time=600,
-        early_stopping_method="generate",
-        return_intermediate_steps=True,
         max_iterations=8
     )
     return agent_executor
