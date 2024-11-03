@@ -82,6 +82,7 @@ placeholder="username/repository"
             while count<3 and res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
                 count=count+1
                 res = st.session_state.agent.invoke({"input":"try again","chat_history":"".join([x["role"]+" "+x["content"]+"," for x in st.session_state.chat_history])})
+                time.sleep(10)        
             if res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
                 with st.chat_message("ai"):
                     st.markdown("Relevant information not found for your query. Include more details or try rephrasing your prompt")
