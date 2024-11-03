@@ -129,7 +129,7 @@ class RAGTool:
             )
             results = retriever.invoke(question)
             if len(results)==0:
-                 return f"Relevent data not found from the repository, Ask human for more context"
+                 return f"Relevent data not found from the repository, Stop and Don't execute further. Ask human for more context"
             for doc in results:
                 print(doc)
             combined_content = "\n".join([f"""Path:{doc.metadata['path'] or "Unknown file"}; Content:{doc.page_content or ""}; Chunk-Index:{doc.metadata['chunk_index'] or 0}; Source:{doc.metadata['source']}""" for doc in results])
@@ -216,7 +216,7 @@ New input: {input}
         tools=tools,
         verbose=True,
         handle_parsing_errors=True,
-        max_execution_time=180,
-        max_iterations=60
+        max_execution_time=600,
+        max_iterations=6
     )
     return agent_executor
