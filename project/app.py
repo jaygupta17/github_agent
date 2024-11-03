@@ -17,6 +17,14 @@ def mm(graph):
 
 def ui():
     st.markdown("""
+    ### GitHub Repository Analysis
+    Ask questions about the repository content and structure. If you get a timeout:
+    - Try breaking your question into smaller parts
+    - Be more specific in your questions
+    - Avoid asking multiple questions at once
+    - If agent responds with "Agent stopped due to iteration limit or time limit" , prompt "try again"
+    """)
+    st.markdown("""
 - If agent responds with "Agent stopped due to iteration limit or time limit" , prompt "try again"
 """)
     st.sidebar.header("Gemini Agent")
