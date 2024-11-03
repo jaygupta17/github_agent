@@ -92,8 +92,7 @@ class RAGTool:
         ]
     
     def github_loader(self):
-        print(f"Loading repository: {self.repo}")
-        try:
+            print(f"Loading repository: {self.repo}")
             loader = GithubFileLoader(
                 repo=self.repo,
                 access_token=os.getenv("GITHUB_ACCESS_TOKEN"),
@@ -114,13 +113,13 @@ class RAGTool:
             self.vectorstore = FAISS.from_documents(processed_docs, self.embeddings)
             self.summary=gemini.invoke(f"You are a RAG assistant. summarize the following repository content for efficient chat with repository use case. Repo Content:\n{self.combined_content}")
             print("Loaded.")
-        except:
-            documents = [Document(
-                page_content=f"Failed to load {self.repo}. Repo not supported, Try different repository",
-                metadata={"source": f"repo:{self.repo}"},
-            )]
-            self.vectorstore = FAISS.from_documents(documents, self.embeddings)
-            print(f"Repository not supported, Error loading files")
+        # except:
+        #     documents = [Document(
+        #         page_content=f"Failed to load {self.repo}. Repo not supported, Try different repository",
+        #         metadata={"source": f"repo:{self.repo}"},
+        #     )]
+        #     self.vectorstore = FAISS.from_documents(documents, self.embeddings)
+        #     print(f"Repository not supported, Error loading files")
     def query(self, question: str) -> str:
         try:
             retriever = self.vectorstore.as_retriever(
