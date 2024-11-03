@@ -96,10 +96,11 @@ placeholder="username/repository"
             if res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
                 with st.chat_message("ai"):
                     st.markdown("Relevant information not found for your query. Include more details or try rephrasing your prompt")
+                st.session_state.chat_history.append({"role":"ai","content":""})
             else:
                 with st.chat_message("ai"):
                     st.markdown(res['output'])
-            st.session_state.chat_history.append({"role":"ai","content":res['output']})
+                st.session_state.chat_history.append({"role":"ai","content":res['output']})
             
 
 if __name__=="__main__":
