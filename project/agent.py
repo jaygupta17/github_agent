@@ -16,6 +16,8 @@ load_dotenv()
 gemini = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     temperature=0,
+    timeout=60,
+    max_output_tokens=4000
 )
 
 class RAGTool:     
@@ -198,7 +200,8 @@ New input: {input}
         tools=tools,
         verbose=True,
         handle_parsing_errors=True,
-        max_execution_time=300,
-        max_iterations=5
+        max_execution_time=600,
+        early_stopping_method="generate",
+        max_iterations=8
     )
     return agent_executor
