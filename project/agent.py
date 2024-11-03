@@ -16,7 +16,7 @@ load_dotenv()
 gemini = ChatGoogleGenerativeAI(
     model="gemini-1.5-flash",
     temperature=0,
-    timeout=60,
+    timeout=200,
     max_output_tokens=4000
 )
 
@@ -202,6 +202,7 @@ New input: {input}
         handle_parsing_errors=True,
         max_execution_time=600,
         early_stopping_method="generate",
+        return_intermediate_steps=True,
         max_iterations=8
     )
     return agent_executor
