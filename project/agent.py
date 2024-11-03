@@ -190,7 +190,7 @@ Important Guidelines:
 4. Don't repeat queries for the same information
 5. Use RepositorySummary tool only once to get repository summary.
 6. For RepositorySummary tool always provide up to date summary as final answer  
-                                          
+7. If the retrieved information is not enough to answer human's query, ask for more context                                   
 Previous conversation history:
 {chat_history}
 
