@@ -62,6 +62,7 @@ placeholder="username/repository"
         st.session_state.chat_history = []
     if repo_name=="jaygupta17/github_agent":
         st.markdown("## Can't access the repo")
+        return
     if "agent" not in st.session_state:
         with st.spinner("Initializing agent..."):
             try:
