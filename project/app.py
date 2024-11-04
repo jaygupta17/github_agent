@@ -85,22 +85,24 @@ placeholder="username/repository"
             st.markdown(user_input)
         time.sleep(10)        
         with st.spinner("Typing..."):
-            res = st.session_state.agent.invoke({"input":user_input,"chat_history":"".join([x["role"]+" "+x["content"]+"," for x in st.session_state.chat_history])})
-            st.session_state.chat_history.append({"role":"user","content":user_input})
-            count=0
-            while count<3 and res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
-                count=count+1
-                res = st.session_state.agent.invoke({"input":"try again","chat_history":"".join([x["role"]+" "+x["content"]+"," for x in st.session_state.chat_history])})
-                time.sleep(10)        
-            if res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
-                with st.chat_message("ai"):
-                    st.markdown("Relevant information not found for your query. Include more details or try rephrasing your prompt")
-                st.session_state.chat_history.append({"role":"ai","content":""})
-            else:
-                with st.chat_message("ai"):
-                    st.markdown(res['output'])
-                st.session_state.chat_history.append({"role":"ai","content":res['output']})
-            
+            try:
+                res = st.session_state.agent.invoke({"input":user_input,"chat_history":"".join([x["role"]+" "+x["content"]+"," for x in st.session_state.chat_history])})
+                st.session_state.chat_history.append({"role":"user","content":user_input})
+                count=0
+                while count<3 and res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
+                  count=count+1
+                  res = st.session_state.agent.invoke({"input":"try again","chat_history":"".join([x["role"]+" "+x["content"]+"," for x in st.session_state.chat_history])})
+                  time.sleep(10)        
+                if res['output'].strip()=="Agent stopped due to iteration limit or time limit.":
+                  with st.chat_message("ai"):
+                     st.markdown("Relevant information not found for your query. Include more details or try rephrasing your prompt")
+                  st.session_state.chat_history.append({"role":"ai","content":""})
+                else:
+                  with st.chat_message("ai"):
+                     st.markdown(res['output'])
+                  st.session_state.chat_history.append({"role":"ai","content":res['output']})
+            except Exception as e:
+                print(f"Error: {str(e)}")
 
 if __name__=="__main__":
     ui()
