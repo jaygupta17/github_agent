@@ -66,8 +66,7 @@ placeholder="username/repository"
             try:
                 st.session_state.agent = setup_agent(gemini, repo_name, selected_types)
             except:
-                 with st.chat_message("ai"):
-                    st.markdown("""
+                st.markdown("""
                     ## Failed to load repository. Possible reasons:  
                     - Invalid format for repository name
                     - Repository not supported
